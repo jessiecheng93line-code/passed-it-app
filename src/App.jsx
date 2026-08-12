@@ -4,7 +4,7 @@ import {
   ChevronRight, Play, Plus, BarChart3, Heart, Settings, Users, 
   ShieldCheck, LogIn, LogOut, Search, Trash2, Sparkles, Filter, RefreshCw,
   Clapperboard, Camera, Ticket, MessageSquareQuote, X, Pencil, AlertTriangle,
-  Smile, Frown, Brain, Check, Info
+  Smile, Frown, Brain, Check, Info, Download
 } from 'lucide-react';
 
 const DEFAULT_ADMINS = ['ssvs73334@gmail.com', 'jessiecheng93line@gmail.com'];
@@ -144,7 +144,7 @@ export default function App() {
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   // 互動特效 State
@@ -416,6 +416,152 @@ export default function App() {
     }
   };
 
+  const handleDownloadCardPNG = (item) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 1000;
+    const ctx = canvas.getContext('2d');
+
+    // Background Gradient
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, 1000);
+    bgGradient.addColorStop(0, '#18181b');
+    bgGradient.addColorStop(0.5, '#09090b');
+    bgGradient.addColorStop(1, '#000000');
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, 600, 1000);
+
+    // Border
+    ctx.strokeStyle = '#3f3f46';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(10, 10, 580, 980);
+
+    // Header
+    ctx.fillStyle = '#ef4444';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('PASSED IT • 這部給過！', 40, 60);
+
+    ctx.fillStyle = '#a1a1aa';
+    ctx.font = '16px sans-serif';
+    ctx.fillText(new Date().getFullYear().toString(), 510, 60);
+
+    // Divider
+    ctx.strokeStyle = '#27272a';
+    ctx.beginPath();
+    ctx.moveTo(40, 80);
+    ctx.lineTo(560, 80);
+    ctx.stroke();
+
+    // Draw Poster Box
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.src = item.poster;
+
+    const renderTextAndDetails = () => {
+      // Title
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 32px sans-serif';
+      const titleText = item.title.length > 18 ? item.title.substring(0, 17) + '...' : item.title;
+      ctx.fillText(titleText, 40, 550);
+
+      // Score Box
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 44px sans-serif';
+      ctx.fillText(`${item.overallScore}`, 40, 610);
+
+      ctx.fillStyle = '#71717a';
+      ctx.font = '20px sans-serif';
+      ctx.fillText('/ 10 分', 130, 610);
+
+      // Emotion Tags
+      if (item.emotions) {
+        let tagX = 40;
+        const tagY = 650;
+        const tags = [];
+        if (item.emotions.funny >= 3) tags.push(`😂 爆笑 ${item.emotions.funny}/5`);
+        if (item.emotions.tear >= 3) tags.push(`😭 催淚 ${item.emotions.tear}/5`);
+        if (item.emotions.love >= 3) tags.push(`💖 高甜 ${item.emotions.love}/5`);
+        if (item.emotions.heal >= 3) tags.push(`🥰 治癒 ${item.emotions.heal}/5`);
+        if (item.emotions.tense >= 3) tags.push(`😱 刺激 ${item.emotions.tense}/5`);
+        if (item.emotions.brain >= 3) tags.push(`🤯 燒腦 ${item.emotions.brain}/5`);
+
+        tags.forEach(tag => {
+          ctx.fillStyle = '#27272a';
+          ctx.beginPath();
+          ctx.roundRect(tagX, tagY, 120, 32, 16);
+          ctx.fill();
+
+          ctx.fillStyle = '#fef08a';
+          ctx.font = 'bold 14px sans-serif';
+          ctx.fillText(tag, tagX + 12, tagY + 21);
+          tagX += 130;
+        });
+      }
+
+      // Review Quote Box
+      ctx.fillStyle = '#18181b';
+      ctx.beginPath();
+      ctx.roundRect(40, 710, 520, 210, 16);
+      ctx.fill();
+      ctx.strokeStyle = '#3f3f46';
+      ctx.stroke();
+
+      ctx.fillStyle = '#e4e4e7';
+      ctx.font = 'italic 18px sans-serif';
+      const reviewText = item.userReview || "非常值得推薦的神作作品！";
+      
+      // Simple multi-line wrap
+      const words = reviewText.split('');
+      let line = '';
+      let lineY = 750;
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n];
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > 470 && n > 0) {
+          ctx.fillText(line, 65, lineY);
+          line = words[n];
+          lineY += 30;
+          if (lineY > 890) break;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, 65, lineY);
+
+      // Footer
+      ctx.fillStyle = '#71717a';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('掃描/下載來自 PassIt 影評分享', 40, 960);
+
+      // Trigger Download
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `PassIt-${item.title.replace(/\s+/g, '_')}.png`;
+        link.href = dataUrl;
+        link.click();
+        showToast("精美 PNG 圖卡已成功產生並下載！");
+      } catch (err) {
+        showToast("圖卡已生成，您可以長按圖片或直接截圖儲存！");
+      }
+    };
+
+    img.onload = () => {
+      // Draw Poster
+      ctx.drawImage(img, 150, 110, 300, 400);
+      renderTextAndDetails();
+    };
+
+    img.onerror = () => {
+      // Fallback poster box
+      ctx.fillStyle = '#27272a';
+      ctx.fillRect(150, 110, 300, 400);
+      ctx.fillStyle = '#a1a1aa';
+      ctx.font = '18px sans-serif';
+      ctx.fillText('🎬 影劇海報', 240, 310);
+      renderTextAndDetails();
+    };
+  };
+
   // Filter calculations
   const filteredRatings = myRatings.filter(r => {
     const matchesPlatform = platformFilter === 'ALL' || (r.platform && r.platform.includes(platformFilter));
@@ -645,6 +791,7 @@ export default function App() {
           </button>
         </div>
 
+        {/* Leaderboard Tab */}
         {activeTab === 'leaderboard' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -769,6 +916,7 @@ export default function App() {
           </div>
         )}
 
+        {/* New Releases Tab */}
         {activeTab === 'new_releases' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -861,6 +1009,7 @@ export default function App() {
           </div>
         )}
 
+        {/* Analytics Tab */}
         {activeTab === 'analytics' && (
           <div className="bg-zinc-800/90 border border-zinc-700 rounded-xl p-6 space-y-6 shadow-xl">
             <div className="text-center space-y-1">
@@ -888,6 +1037,7 @@ export default function App() {
 
       </div>
 
+      {/* Details Synopsis Modal */}
       {viewingDetailMedia && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl relative max-h-[90vh] flex flex-col">
@@ -981,6 +1131,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Edit / New Rating Modal */}
       {selectedMedia && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-xl p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto relative">
@@ -1301,8 +1452,11 @@ export default function App() {
 
             <div className="flex gap-2">
               <button onClick={() => setShowShareModal(null)} className="px-3 py-1.5 bg-zinc-800 text-xs text-zinc-300 rounded-lg">關閉</button>
-              <button onClick={() => showToast("卡片已成功輸出為精美 PNG 圖卡！")} className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-xs text-white font-bold rounded-lg flex items-center gap-1 shadow">
-                <Share2 className="w-3.5 h-3.5" /> 下載 PNG 卡片
+              <button 
+                onClick={() => handleDownloadCardPNG(showShareModal)} 
+                className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow"
+              >
+                <Download className="w-3.5 h-3.5 text-white" /> 下載 PNG 卡片
               </button>
             </div>
           </div>
