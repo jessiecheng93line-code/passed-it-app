@@ -451,19 +451,16 @@ export default function App() {
     ctx.lineTo(560, 80);
     ctx.stroke();
 
-    // Draw Poster Box
     const img = new Image();
     img.crossOrigin = 'Anonymous';
     img.src = item.poster;
 
     const renderTextAndDetails = () => {
-      // Title
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 32px sans-serif';
       const titleText = item.title.length > 18 ? item.title.substring(0, 17) + '...' : item.title;
       ctx.fillText(titleText, 40, 550);
 
-      // Score Box
       ctx.fillStyle = '#f59e0b';
       ctx.font = 'bold 44px sans-serif';
       ctx.fillText(`${item.overallScore}`, 40, 610);
@@ -472,7 +469,6 @@ export default function App() {
       ctx.font = '20px sans-serif';
       ctx.fillText('/ 10 分', 130, 610);
 
-      // Emotion Tags
       if (item.emotions) {
         let tagX = 40;
         const tagY = 650;
@@ -497,7 +493,6 @@ export default function App() {
         });
       }
 
-      // Review Quote Box
       ctx.fillStyle = '#18181b';
       ctx.beginPath();
       ctx.roundRect(40, 710, 520, 210, 16);
@@ -509,7 +504,6 @@ export default function App() {
       ctx.font = 'italic 18px sans-serif';
       const reviewText = item.userReview || "非常值得推薦的神作作品！";
       
-      // Simple multi-line wrap
       const words = reviewText.split('');
       let line = '';
       let lineY = 750;
@@ -527,12 +521,10 @@ export default function App() {
       }
       ctx.fillText(line, 65, lineY);
 
-      // Footer
       ctx.fillStyle = '#71717a';
       ctx.font = '14px sans-serif';
-      ctx.fillText('掃描/下載來自 PassIt 影評分享', 40, 960);
+      ctx.fillText('來自 PassIt 影評分享 • 感謝閱讀', 40, 960);
 
-      // Trigger Download
       try {
         const dataUrl = canvas.toDataURL('image/png');
         const link = document.createElement('a');
@@ -541,18 +533,16 @@ export default function App() {
         link.click();
         showToast("精美 PNG 圖卡已成功產生並下載！");
       } catch (err) {
-        showToast("圖卡已生成，您可以長按圖片或直接截圖儲存！");
+        showToast("圖卡已生成，您可直接截圖儲存！");
       }
     };
 
     img.onload = () => {
-      // Draw Poster
       ctx.drawImage(img, 150, 110, 300, 400);
       renderTextAndDetails();
     };
 
     img.onerror = () => {
-      // Fallback poster box
       ctx.fillStyle = '#27272a';
       ctx.fillRect(150, 110, 300, 400);
       ctx.fillStyle = '#a1a1aa';
@@ -618,81 +608,128 @@ export default function App() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-[100] bg-gradient-to-r from-red-600 to-amber-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-3 duration-200 border border-white/20">
+        <div className="fixed top-3 right-3 md:top-5 md:right-5 z-[100] bg-gradient-to-r from-red-600 to-amber-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-2xl animate-in fade-in slide-in-from-top-3 duration-200 border border-white/20">
           ✨ {toastMessage}
         </div>
       )}
 
-      {/* Navigation Header */}
-      <nav className="sticky top-0 z-40 bg-[#141414]/95 backdrop-blur-md border-b border-zinc-800/80 px-4 md:px-8 py-3.5 flex items-center justify-between shadow-xl relative">
-        <div className="flex items-center gap-4">
-          <div className="relative group cursor-pointer">
-            <div className="absolute -inset-1 bg-gradient-to-r from-red-600 via-amber-500 to-blue-600 rounded-xl blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-text-gradient"></div>
-            <div className="relative px-3.5 py-1.5 bg-black ring-1 ring-zinc-800 rounded-xl flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span className="font-black text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-amber-400 to-red-500 animate-text-gradient drop-shadow-sm">
-                {appTitle}
-              </span>
+      {/* Responsive Navigation Header */}
+      <nav className="sticky top-0 z-40 bg-[#141414]/95 backdrop-blur-md border-b border-zinc-800/80 px-3 md:px-8 py-2.5 md:py-3.5 shadow-xl relative">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4">
+          
+          {/* Top Row on Mobile / Left Section on Desktop */}
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <div className="relative group cursor-pointer">
+              <div className="absolute -inset-1 bg-gradient-to-r from-red-600 via-amber-500 to-blue-600 rounded-xl blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-text-gradient"></div>
+              <div className="relative px-2.5 md:px-3.5 py-1 md:py-1.5 bg-black ring-1 ring-zinc-800 rounded-xl flex items-center gap-1.5 md:gap-2">
+                <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400" />
+                <span className="font-black text-base md:text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-amber-400 to-red-500 animate-text-gradient drop-shadow-sm">
+                  {appTitle}
+                </span>
+              </div>
+            </div>
+
+            {/* Mobile-only User Controls Header Right */}
+            <div className="flex items-center gap-1.5 md:hidden">
+              {user?.isAdmin && (
+                <button 
+                  onClick={() => setShowAdminModal(true)}
+                  className="bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-[11px] px-2 py-1 rounded-lg flex items-center gap-1 transition font-medium"
+                  title="親友權限"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              <button 
+                onClick={() => setShowSettingsModal(true)}
+                className="text-zinc-400 hover:text-white p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 transition"
+                title="系統設定"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+
+              {user ? (
+                <button 
+                  onClick={() => setUser(null)}
+                  className="text-[11px] text-zinc-300 hover:text-red-400 flex items-center gap-1 bg-zinc-900 border border-zinc-800 px-2 py-1 rounded-lg max-w-[110px]"
+                  title={`${user.name} (點擊登出)`}
+                >
+                  <LogOut className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                  <span className="truncate">{user.name}</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowLoginModal(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 transition shadow-md"
+                >
+                  <LogIn className="w-3.5 h-3.5" /> 登入
+                </button>
+              )}
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3 md:gap-5">
-          <div className="flex gap-2 text-xs md:text-sm font-medium bg-zinc-900/50 p-1 rounded-lg border border-zinc-800/50">
-            <button 
-              onClick={() => setActiveTab('leaderboard')}
-              className={`px-2.5 py-1 rounded-md transition ${activeTab === 'leaderboard' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'}`}
-            >
-              🏆 排行榜
-            </button>
-            <button 
-              onClick={() => setActiveTab('new_releases')}
-              className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${activeTab === 'new_releases' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'}`}
-            >
-              <Flame className="w-3.5 h-3.5 text-orange-400" /> 上新片單
-            </button>
-            <button 
-              onClick={() => setActiveTab('analytics')}
-              className={`px-2.5 py-1 rounded-md transition ${activeTab === 'analytics' ? 'bg-red-600 text-white font-bold' : 'text-zinc-400 hover:text-white'}`}
-            >
-              📊 統計數據
-            </button>
+          {/* Navigation Tabs & Desktop Controls */}
+          <div className="flex items-center justify-between md:justify-end gap-2 md:gap-5 w-full md:w-auto">
+            {/* Tabs */}
+            <div className="flex w-full md:w-auto justify-between md:justify-start gap-1 text-xs md:text-sm font-medium bg-zinc-900/80 p-1 rounded-lg border border-zinc-800/80">
+              <button 
+                onClick={() => setActiveTab('leaderboard')}
+                className={`flex-1 md:flex-none text-center px-2 md:px-3 py-1.5 rounded-md transition ${activeTab === 'leaderboard' ? 'bg-red-600 text-white font-bold shadow' : 'text-zinc-400 hover:text-white'}`}
+              >
+                🏆 排行榜
+              </button>
+              <button 
+                onClick={() => setActiveTab('new_releases')}
+                className={`flex-1 md:flex-none text-center px-2 md:px-3 py-1.5 rounded-md transition flex items-center justify-center gap-1 ${activeTab === 'new_releases' ? 'bg-red-600 text-white font-bold shadow' : 'text-zinc-400 hover:text-white'}`}
+              >
+                <Flame className="w-3.5 h-3.5 text-orange-400" /> 上新片單
+              </button>
+              <button 
+                onClick={() => setActiveTab('analytics')}
+                className={`flex-1 md:flex-none text-center px-2 md:px-3 py-1.5 rounded-md transition ${activeTab === 'analytics' ? 'bg-red-600 text-white font-bold shadow' : 'text-zinc-400 hover:text-white'}`}
+              >
+                📊 統計數據
+              </button>
+            </div>
+
+            {/* Desktop User Controls */}
+            <div className="hidden md:flex items-center gap-2 border-l border-zinc-800 pl-3">
+              {user?.isAdmin && (
+                <button 
+                  onClick={() => setShowAdminModal(true)}
+                  className="bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition font-medium"
+                >
+                  <Users className="w-3.5 h-3.5" /> 親友權限
+                </button>
+              )}
+
+              <button 
+                onClick={() => setShowSettingsModal(true)}
+                className="text-zinc-400 hover:text-white p-1.5 rounded-lg hover:bg-zinc-800 transition"
+                title="系統設定"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+
+              {user ? (
+                <button 
+                  onClick={() => setUser(null)}
+                  className="text-xs text-zinc-400 hover:text-red-400 flex items-center gap-1 bg-zinc-900 border border-zinc-800 px-2.5 py-1.5 rounded-lg"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> {user.name} (登出)
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowLoginModal(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-md"
+                >
+                  <LogIn className="w-3.5 h-3.5" /> 帳號綁定登入
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 border-l border-zinc-800 pl-3">
-            {user?.isAdmin && (
-              <button 
-                onClick={() => setShowAdminModal(true)}
-                className="bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition font-medium"
-              >
-                <Users className="w-3.5 h-3.5" /> 親友權限
-              </button>
-            )}
-
-            <button 
-              onClick={() => setShowSettingsModal(true)}
-              className="text-zinc-400 hover:text-white p-1.5 rounded-lg hover:bg-zinc-800 transition"
-              title="系統設定"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-
-            {user ? (
-              <button 
-                onClick={() => setUser(null)}
-                className="text-xs text-zinc-400 hover:text-red-400 flex items-center gap-1 bg-zinc-900 border border-zinc-800 px-2.5 py-1.5 rounded-lg"
-              >
-                <LogOut className="w-3.5 h-3.5" /> {user.name} (登出)
-              </button>
-            ) : (
-              <button 
-                onClick={() => setShowLoginModal(true)}
-                className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-md"
-              >
-                <LogIn className="w-3.5 h-3.5" /> 帳號綁定登入
-              </button>
-            )}
-          </div>
         </div>
       </nav>
 
@@ -882,30 +919,30 @@ export default function App() {
 
                     <div className="flex justify-between items-center text-xs text-zinc-400 mt-3 pt-2 border-t border-zinc-700/60">
                       <span>觀看日期：{item.watchedDate}</span>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5 md:gap-2 flex-wrap justify-end">
                         <button 
                           onClick={() => setViewingDetailMedia(item)}
-                          className="flex items-center gap-1 text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded-md transition font-medium border border-zinc-700"
+                          className="flex items-center gap-1 text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-md transition font-medium border border-zinc-700"
                         >
-                          <Info className="w-3.5 h-3.5 text-blue-400" /> 劇情簡介
+                          <Info className="w-3.5 h-3.5 text-blue-400" /> 簡介
                         </button>
                         <button 
                           onClick={() => setSelectedMedia(item)}
-                          className="flex items-center gap-1 text-zinc-300 hover:text-amber-300 bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded-md transition font-medium border border-zinc-700"
+                          className="flex items-center gap-1 text-zinc-300 hover:text-amber-300 bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-md transition font-medium border border-zinc-700"
                         >
                           <Pencil className="w-3.5 h-3.5 text-amber-400" /> 編輯
                         </button>
                         <button 
                           onClick={() => setItemToDelete(item)}
-                          className="flex items-center gap-1 text-zinc-300 hover:text-red-400 bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded-md transition font-medium border border-zinc-700"
+                          className="flex items-center gap-1 text-zinc-300 hover:text-red-400 bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-md transition font-medium border border-zinc-700"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-red-400" /> 刪除
                         </button>
                         <button 
                           onClick={() => setShowShareModal(item)}
-                          className="flex items-center gap-1 text-zinc-200 hover:text-white bg-red-600/80 hover:bg-red-600 px-3 py-1 rounded-md transition font-medium border border-red-500/50 shadow"
+                          className="flex items-center gap-1 text-zinc-200 hover:text-white bg-red-600/80 hover:bg-red-600 px-2.5 py-1 rounded-md transition font-medium border border-red-500/50 shadow"
                         >
-                          <Share2 className="w-3.5 h-3.5 text-white" /> IG 卡片
+                          <Share2 className="w-3.5 h-3.5 text-white" /> 卡片
                         </button>
                       </div>
                     </div>
