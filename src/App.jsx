@@ -4,7 +4,7 @@ import {
   ChevronRight, Play, Plus, BarChart3, Heart, Settings, Users, 
   ShieldCheck, LogIn, LogOut, Search, Trash2, Sparkles, Filter, RefreshCw,
   Clapperboard, Camera, Ticket, MessageSquareQuote, X, Pencil, AlertTriangle,
-  Smile, Frown, Brain, Check, Info, Download
+  Smile, Frown, Brain, Check, Info, Download, Upload
 } from 'lucide-react';
 
 const DEFAULT_ADMINS = ['ssvs73334@gmail.com', 'jessiecheng93line@gmail.com'];
@@ -73,51 +73,6 @@ const INITIAL_RATINGS = [
   }
 ];
 
-const INITIAL_RELEASES = [
-  {
-    id: 'nf_tv_101',
-    title: "劇場版「鬼滅之刃」無限城篇",
-    platforms: ["Netflix", "Disney+"],
-    platform: "Netflix / Disney+",
-    type: "TV",
-    genre: "雙平台同步熱播 / 熱門影集",
-    releaseDate: "2026-08-01",
-    matchScore: 98,
-    matchReason: "🔥 跨 Netflix & Disney+ 雙平台熱播中！動漫熱門推薦",
-    poster: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&auto=format&fit=crop&q=60",
-    backdrop: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&auto=format&fit=crop&q=60",
-    overview: "鬼殺隊與鬼舞辻無慘的最終血戰在無限城中爆發！竈門炭治郎與九柱們被突如其來的機關推進龐大的鬼之巢穴，面對上弦之鬼的凶猛反撲，這場攸關人類命運的生死大決戰即將拉開序幕。"
-  },
-  {
-    id: 'nf_tv_102',
-    title: "黑鏡 第七季 (Black Mirror S7)",
-    platforms: ["Netflix"],
-    platform: "Netflix",
-    type: "TV",
-    genre: "Netflix 台灣獨家影集 / 科幻",
-    releaseDate: "2026-08-15",
-    matchScore: 96,
-    matchReason: "因為你給《怪奇物語》打高分，偏好燒腦科幻單元劇題材",
-    poster: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=500&auto=format&fit=crop&q=60",
-    backdrop: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&auto=format&fit=crop&q=60",
-    overview: "經典警世科幻單元劇重磅回歸第七季！包含六集全新獨立故事，深入探討宇宙網遊、人工智慧倫理與人類意識上傳等嶄新科技危機。"
-  },
-  {
-    id: 'ds_tv_103',
-    title: "阿索卡 (Ahsoka S2)",
-    platforms: ["Disney+"],
-    platform: "Disney+",
-    type: "TV",
-    genre: "Disney+ 台灣獨家影集 / 動作",
-    releaseDate: "2026-08-18",
-    matchScore: 91,
-    matchReason: "因為你喜歡《曼達洛人》，星戰宇宙高契合推薦",
-    poster: "https://images.unsplash.com/photo-1579566346927-c68383817a25?w=500&auto=format&fit=crop&q=60",
-    backdrop: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&auto=format&fit=crop&q=60",
-    overview: "前絕地武士阿索卡·塔諾與她的徒弟莎賓·雷恩在神秘的另一銀河系中繼續尋找古老力量與索龍元帥的蹤跡。第二季將深入探討沛里亞（Peridea）的古老絕地秘密與原力的終極平衡。"
-  }
-];
-
 export default function App() {
   const [appTitle, setAppTitle] = useState("這部給過！ (PassedIt)");
   const [activeTab, setActiveTab] = useState('leaderboard');
@@ -125,15 +80,12 @@ export default function App() {
   const [mediaTypeFilter, setMediaTypeFilter] = useState('ALL');
   const [tmdbKey, setTmdbKey] = useState(DEFAULT_TMDB_KEY);
   
-  const [user, setUser] = useState({
-    email: 'ssvs73334@gmail.com',
-    name: '主管理員',
-    isAdmin: true
-  });
+  // 為了安全起見，預設進入網站是未登入狀態
+  const [user, setUser] = useState(null);
 
   const [whitelist, setWhitelist] = useState(DEFAULT_ADMINS);
   const [myRatings, setMyRatings] = useState(INITIAL_RATINGS);
-  const [newReleases, setNewReleases] = useState(INITIAL_RELEASES);
+  const [newReleases, setNewReleases] = useState([]);
   const [loadingReleases, setLoadingReleases] = useState(false);
 
   // 劇情簡介與詳細資訊 Modal State
@@ -145,6 +97,16 @@ export default function App() {
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // 權限檢查函式 (防護網)
+  const requireAuth = (actionCallback) => {
+    if (!user) {
+      showToast("⚠️ 請先「登入」以驗證親友身分，才能執行此操作！");
+      setShowLoginModal(true);
+      return;
+    }
+    actionCallback();
   };
 
   // 互動特效 State
@@ -304,7 +266,7 @@ export default function App() {
         setNewReleases(mergedList);
       }
     } catch (err) {
-      console.warn("TMDB fetch fallback to default", err);
+      console.warn("TMDB fetch error", err);
     } finally {
       setLoadingReleases(false);
     }
@@ -347,6 +309,41 @@ export default function App() {
     }
     setWhitelist(whitelist.filter(e => e !== emailToRemove));
     showToast(`已移除 ${emailToRemove}`);
+  };
+
+  // 資料匯出備份 (解決手機/電腦跨裝置資料問題)
+  const handleExportData = () => {
+    const exportData = { ratings: myRatings, whitelist: whitelist };
+    const dataStr = JSON.stringify(exportData);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `PassIt_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    showToast("✅ 資料備份檔案已成功下載！請將此檔案傳至手機即可匯入。");
+  };
+
+  // 資料匯入同步
+  const handleImportData = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (data.ratings) setMyRatings(data.ratings);
+        if (data.whitelist) setWhitelist(data.whitelist);
+        showToast("✨ 資料已成功匯入並同步至此裝置！");
+        setShowSettingsModal(false);
+      } catch (err) {
+        showToast("❌ 檔案格式錯誤，無法讀取資料！");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // 清空 input 以便重複選擇同一檔案
   };
 
   const handleSearchTMDB = async (query) => {
@@ -644,7 +641,7 @@ export default function App() {
               <button 
                 onClick={() => setShowSettingsModal(true)}
                 className="text-zinc-400 hover:text-white p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 transition"
-                title="系統設定"
+                title="系統設定與資料備份"
               >
                 <Settings className="w-3.5 h-3.5" />
               </button>
@@ -707,7 +704,7 @@ export default function App() {
               <button 
                 onClick={() => setShowSettingsModal(true)}
                 className="text-zinc-400 hover:text-white p-1.5 rounded-lg hover:bg-zinc-800 transition"
-                title="系統設定"
+                title="系統設定與資料備份"
               >
                 <Settings className="w-4 h-4" />
               </button>
@@ -724,7 +721,7 @@ export default function App() {
                   onClick={() => setShowLoginModal(true)}
                   className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-md"
                 >
-                  <LogIn className="w-3.5 h-3.5" /> 帳號綁定登入
+                  <LogIn className="w-3.5 h-3.5" /> 驗證登入
                 </button>
               )}
             </div>
@@ -756,9 +753,10 @@ export default function App() {
             </p>
           </div>
           <div className="bg-zinc-800/90 border border-zinc-700/80 p-4 rounded-xl shadow-md hover:border-emerald-400/50 hover:shadow-[0_0_20px_rgba(52,211,153,0.15)] transition-all">
-            <p className="text-zinc-400 text-xs font-medium">權限身份</p>
+            <p className="text-zinc-400 text-xs font-medium">目前權限狀態</p>
             <p className="text-sm font-bold mt-2 text-emerald-400 flex items-center gap-1">
-              <ShieldCheck className="w-4 h-4" /> {user?.isAdmin ? '最高管理員' : user ? '已授權親友' : '訪客模式'}
+              {user ? <ShieldCheck className="w-4 h-4" /> : <LogIn className="w-4 h-4 text-zinc-500" />} 
+              {user?.isAdmin ? '最高管理員' : user ? '已授權親友' : <span className="text-zinc-400">訪客 (需登入)</span>}
             </p>
           </div>
         </div>
@@ -818,9 +816,11 @@ export default function App() {
 
           <button 
             onClick={() => {
-              setSearchQuery("");
-              setSearchResults([]);
-              setSelectedMedia({ title: '', platform: 'Netflix', type: 'TV', overallScore: 8, rewatchScore: 3, emotions: { funny: 3, tear: 1, love: 2, heal: 3, tense: 2, brain: 2 }, isNew: true });
+              requireAuth(() => {
+                setSearchQuery("");
+                setSearchResults([]);
+                setSelectedMedia({ title: '', platform: 'Netflix', type: 'TV', overallScore: 8, rewatchScore: 3, emotions: { funny: 3, tear: 1, love: 2, heal: 3, tense: 2, brain: 2 }, isNew: true });
+              });
             }}
             className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-md w-full md:w-auto justify-center"
           >
@@ -833,7 +833,7 @@ export default function App() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold flex items-center gap-2 text-white">
-                <Award className="text-amber-400 w-5 h-5" /> 觀影歷史紀錄榜單 ({filteredRatings.length})
+                <Award className="text-amber-400 w-5 h-5" /> 觀影歷史紀錄榜 ({filteredRatings.length})
               </h2>
             </div>
 
@@ -927,13 +927,13 @@ export default function App() {
                           <Info className="w-3.5 h-3.5 text-blue-400" /> 簡介
                         </button>
                         <button 
-                          onClick={() => setSelectedMedia(item)}
+                          onClick={() => requireAuth(() => setSelectedMedia(item))}
                           className="flex items-center gap-1 text-zinc-300 hover:text-amber-300 bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-md transition font-medium border border-zinc-700"
                         >
                           <Pencil className="w-3.5 h-3.5 text-amber-400" /> 編輯
                         </button>
                         <button 
-                          onClick={() => setItemToDelete(item)}
+                          onClick={() => requireAuth(() => setItemToDelete(item))}
                           className="flex items-center gap-1 text-zinc-300 hover:text-red-400 bg-zinc-800 hover:bg-zinc-700 px-2 py-1 rounded-md transition font-medium border border-zinc-700"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-red-400" /> 刪除
@@ -958,14 +958,14 @@ export default function App() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold flex items-center gap-2 text-white">
-                <Flame className="text-red-500 w-5 h-5" /> 台灣區 Netflix & Disney+ 串流熱門發行 (雙平台整合)
+                <Flame className="text-red-500 w-5 h-5" /> 台灣區 Netflix & Disney+ 熱門發行
               </h2>
               <button 
                 onClick={fetchTMDBData} 
                 disabled={loadingReleases}
                 className="text-xs text-zinc-300 hover:text-white flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-2.5 py-1 rounded-md shadow"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${loadingReleases ? 'animate-spin' : ''}`} /> 刷新台灣串流片單
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingReleases ? 'animate-spin' : ''}`} /> 刷新片單
               </button>
             </div>
 
@@ -1027,13 +1027,14 @@ export default function App() {
                         <Info className="w-3.5 h-3.5 text-amber-400" /> 查看簡介
                       </button>
                       <button 
-                        onClick={() => setSelectedMedia({
+                        onClick={() => requireAuth(() => setSelectedMedia({
                           ...item,
                           overallScore: 8,
                           rewatchScore: 3,
                           emotions: { funny: 3, tear: 1, love: 2, heal: 3, tense: 2, brain: 2 },
-                          userReview: "這部在正版串流上架了，非常推薦觀賞！"
-                        })}
+                          userReview: "這部在正版串流上架了，非常推薦觀賞！",
+                          isNew: true
+                        }))}
                         className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-semibold py-1.5 px-2 rounded-lg flex items-center justify-center gap-1 transition shadow border border-zinc-600"
                       >
                         <Plus className="w-3.5 h-3.5" /> 評分紀錄
@@ -1153,11 +1154,11 @@ export default function App() {
                 關閉
               </button>
               <button 
-                onClick={() => {
+                onClick={() => requireAuth(() => {
                   const mediaToEdit = { ...viewingDetailMedia };
                   setViewingDetailMedia(null);
                   setSelectedMedia(mediaToEdit);
-                }}
+                })}
                 className="px-4 py-2 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl shadow-lg flex items-center gap-1.5 transition"
               >
                 <Plus className="w-4 h-4" /> 寫觀後心得 / 評分
@@ -1583,13 +1584,39 @@ export default function App() {
         </div>
       )}
 
-      {/* Settings Modal */}
+      {/* Settings & Data Sync Modal */}
       {showSettingsModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm p-6 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Settings className="w-4 h-4 text-zinc-400" /> 系統偏好設定
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md p-6 space-y-5">
+            <h3 className="text-base font-bold text-white flex items-center gap-2 border-b border-zinc-800 pb-3">
+              <Settings className="w-4 h-4 text-zinc-400" /> 系統偏好設定與資料同步
             </h3>
+
+            {/* 資料備份與同步區塊 */}
+            <div className="bg-zinc-950/50 p-4 rounded-xl border border-zinc-800 space-y-3">
+              <div>
+                <h4 className="text-sm font-bold text-amber-400 flex items-center gap-1.5 mb-1">
+                  <RefreshCw className="w-4 h-4" /> 跨裝置資料同步 (手動備份)
+                </h4>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  由於系統採用本地儲存，若需將電腦與手機資料同步，請先在有資料的裝置點擊「匯出」，再將檔案傳到另一台裝置點擊「匯入」。
+                </p>
+              </div>
+              
+              <div className="flex flex-col md:flex-row gap-2 pt-2">
+                <button 
+                  onClick={handleExportData}
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition border border-zinc-700"
+                >
+                  <Download className="w-4 h-4" /> 匯出備份 (Export)
+                </button>
+                
+                <label className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition shadow cursor-pointer">
+                  <Upload className="w-4 h-4" /> 匯入同步 (Import)
+                  <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
+                </label>
+              </div>
+            </div>
 
             <div className="space-y-1">
               <label className="text-xs text-zinc-400">系統主標題</label>
@@ -1612,7 +1639,7 @@ export default function App() {
             </div>
 
             <div className="flex justify-end pt-2">
-              <button onClick={() => { setShowSettingsModal(false); showToast("設定已儲存！"); }} className="px-4 py-1.5 bg-red-600 text-xs font-bold text-white rounded-lg">儲存設定</button>
+              <button onClick={() => { setShowSettingsModal(false); showToast("設定已儲存！"); }} className="px-4 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-xs font-bold text-white rounded-lg transition">關閉 / 儲存設定</button>
             </div>
           </div>
         </div>
